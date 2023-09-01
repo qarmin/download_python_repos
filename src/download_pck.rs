@@ -10,10 +10,9 @@ use rayon::prelude::*;
 use reqwest::blocking::Client;
 use reqwest::header::CONTENT_LENGTH;
 
-use crate::MAX_SIZE;
+use crate::{DWN_PACKAGES, MAX_SIZE};
 
 pub fn download_header_check_size(client: &Client, package: &str, url: &str) -> anyhow::Result<(), anyhow::Error> {
-    println!("{url}");
     let response = client.head(url).send().context("Error in fetching")?;
     let Some(content_length_header) = response.headers().get(CONTENT_LENGTH) else {
         return Ok(());
@@ -27,7 +26,7 @@ pub fn download_header_check_size(client: &Client, package: &str, url: &str) -> 
 }
 
 
-pub fn download_single_package(package: &str, url: &str, save_location: &str) -> Result<(), anyhow::Error> {
+pub fn download_single_package(package: &str, url: &str) -> Result<(), anyhow::Error> {
     let client = Client::builder().timeout(Duration::from_secs(300)).build().unwrap();
 
     download_header_check_size(&client, package, url)?;
@@ -45,14 +44,13 @@ pub fn download_single_package(package: &str, url: &str, save_location: &str) ->
         return Err(anyhow::Error::msg(format!("Too big file {}", bytes.len())));
     }
 
-    let name = format!("{}{package}.tar.gz", save_location);
+    let name = format!("{}{package}.tar.gz", DWN_PACKAGES);
     fs::write(name, bytes).unwrap();
     Ok(())
 }
 
 pub fn download_packages() {
-    let save_location = "packages/";
-    let _ = fs::create_dir_all(save_location);
+    let _ = fs::create_dir_all(DWN_PACKAGES);
 
     let mut packages_to_check = fs::read_to_string("links.txt").unwrap().split('\n').filter(|e| !e.trim().is_empty()).map(|idd| {
         let mut split = idd.split(" ||||| ");
@@ -78,7 +76,7 @@ pub fn download_packages() {
             if i % 100 == 0 {
                 println!("{} / {}", i, all_to_test);
             }
-            match download_single_package(&package, &url, save_location) {
+            match download_single_package(&package, &url) {
                 Ok(_) => tx.send(package).unwrap(),
                 Err(e) => println!("Error in downloading {package} - {url} - {e}")
             }

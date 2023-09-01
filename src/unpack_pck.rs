@@ -10,18 +10,18 @@ use jwalk::WalkDir;
 use rayon::prelude::*;
 use tar::Archive;
 
-use crate::START_URL;
+use crate::{DWN_PACKAGES, DWN_PY_FILES};
 
 pub fn unpack_packages() {
     let mut collected_files = vec![];
-    for entry in WalkDir::new("packages").into_iter().flatten() {
+    for entry in WalkDir::new(DWN_PACKAGES).into_iter().flatten() {
         let path = entry.path();
         if path.extension().unwrap_or_default() != "gz" {
             continue;
         }
         collected_files.push(path.to_path_buf());
     }
-    let atomic_counter = AtomicUsize::new(0);
+    let atomic_counte r = AtomicUsize::new(0);
     let all_to_test = collected_files.len();
     collected_files.into_iter().for_each(|e| {
         let i = atomic_counter.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
@@ -55,7 +55,7 @@ fn process_tar_files(file_name: &str) -> Result<(), Error> {
     let decompressed = GzDecoder::new(BufReader::new(file));
     let mut archive = Archive::new(decompressed);
 
-    let base_output_path = Path::new(START_URL);
+    let base_output_path = Path::new(DWN_PY_FILES);
 
     for entry in archive.entries()? {
         let mut entry = entry.context("Failed to get entry")?;
