@@ -7,7 +7,7 @@ use rayon::prelude::*;
 
 use crate::DWN_PY_FILES;
 
-const MAX_PY_FILE_SIZE: u64 = 100 * 1024;
+const MAX_PY_FILE_SIZE: u64 = 50 * 1024;
 
 pub fn deduplicate_packages() {
     let mut hashmap: HashMap<u64, Vec<Vec<u8>>> = HashMap::new();
@@ -20,7 +20,7 @@ pub fn deduplicate_packages() {
         .flatten()
     {
         let path = i.path();
-        if !path.is_file() || path.extension().unwrap_or_default() != "py" {
+        if !path.is_file() {
             continue;
         }
         path_to_check.push(path.to_path_buf());
@@ -34,6 +34,9 @@ pub fn deduplicate_packages() {
             let i = atomic_counter.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
             if i % 10000 == 0 {
                 println!("{} / {}", i, all_path);
+            }
+            if !path.to_string_lossy().ends_with(".py") {
+                return Some((path, 0, None));
             }
             let Ok(metadata) = path.metadata() else {
                 return None;
