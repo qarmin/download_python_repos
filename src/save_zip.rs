@@ -28,8 +28,8 @@ pub fn pack_files() {
 
     println!("Collected files");
     for (idx, chunk) in files.chunks(MAX_CHUNKS).enumerate() {
-        println!("Packing chunk {}/{}", idx, files.len() / MAX_CHUNKS);
-        let res = pack_simple_archive(chunk, idx);
+        println!("Packing chunk {}/{}", idx + 1 , files.len() / MAX_CHUNKS + 1);
+        let res = pack_simple_archive(chunk, idx + 1);
         if res.is_err() {
             dbg!(&res.unwrap_err());
         }

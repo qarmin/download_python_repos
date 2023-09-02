@@ -1,5 +1,3 @@
-use std::io::Write;
-
 use crate::deduplicate_py_files::deduplicate_packages;
 use crate::download_lnk::download_links;
 use crate::download_pck::download_packages;
