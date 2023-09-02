@@ -16,19 +16,24 @@ const MAX_CHUNKS: usize = 1_000_000;
 const SMALL_LIMIT: usize = 50_000; // Files that can be easily used to generate
 
 pub fn pack_files() {
-    let files = WalkDir::new(DWN_PY_FILES).skip_hidden(false).into_iter().flatten().filter_map(|e| {
-        let Ok(metadata) = e.metadata() else {
-            return None;
-        };
-        if metadata.is_file() {
-            return Some(e.path().to_path_buf());
-        }
-        return None;
-    }).collect::<Vec<_>>();
+    let files = WalkDir::new(DWN_PY_FILES)
+        .skip_hidden(false)
+        .into_iter()
+        .flatten()
+        .filter_map(|e| {
+            let Ok(metadata) = e.metadata() else {
+                return None;
+            };
+            if metadata.is_file() {
+                return Some(e.path().to_path_buf());
+            }
+            None
+        })
+        .collect::<Vec<_>>();
 
     println!("Collected files");
     for (idx, chunk) in files.chunks(MAX_CHUNKS).enumerate() {
-        println!("Packing chunk {}/{}", idx + 1 , files.len() / MAX_CHUNKS + 1);
+        println!("Packing chunk {}/{}", idx + 1, files.len() / MAX_CHUNKS + 1);
         let res = pack_simple_archive(chunk, idx + 1);
         if res.is_err() {
             dbg!(&res.unwrap_err());
@@ -42,7 +47,11 @@ pub fn pack_files() {
 }
 
 fn pack_simple_archive(files_to_check: &[PathBuf], idx: usize) -> Result<(), Error> {
-    let zip_filename = format!("{}{}", DWN_PACKED_FILES, PACKED_FILE_IDX.replace("PPP", &idx.to_string()));
+    let zip_filename = format!(
+        "{}{}",
+        DWN_PACKED_FILES,
+        PACKED_FILE_IDX.replace("PPP", &idx.to_string())
+    );
     let zip_file = File::create(&zip_filename)?;
     let mut zip_writer = ZipWriter::new(zip_file);
 
@@ -50,8 +59,8 @@ fn pack_simple_archive(files_to_check: &[PathBuf], idx: usize) -> Result<(), Err
         .compression_method(zip::CompressionMethod::Deflated)
         .unix_permissions(0o755);
 
-    for (idx, file_to_zip) in files_to_check.into_iter().enumerate() {
-        let Ok(file_content) = std::fs::read(&file_to_zip) else {
+    for (idx, file_to_zip) in files_to_check.iter().enumerate() {
+        let Ok(file_content) = std::fs::read(file_to_zip) else {
             continue;
         };
         let file_name = format!("{}/{}.py", idx / 1000, idx % 1000);

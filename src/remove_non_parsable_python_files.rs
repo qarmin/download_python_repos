@@ -35,7 +35,7 @@ pub fn remove_non_parsable_files() {
         if str_err.contains("Failed to parse") {
             files_to_remove = str_err
                 .split('\n')
-                .filter_map(|e| extract_file(e))
+                .filter_map(extract_file)
                 .collect::<Vec<_>>();
         }
         if files_to_remove.is_empty() {
